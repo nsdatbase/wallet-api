@@ -11,7 +11,7 @@ app.use(helmet());
 app.use(express.json());
 
 // CORS setup
-const corsOrigin = process.env.CORS_ORIGIN || "*";
+const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : "*";
 app.use(cors({ origin: corsOrigin }));
 
 // API Key check (optional)
@@ -86,6 +86,5 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`✅ API listening on port ${PORT}`);
+  console.log(✅ API listening on port ${PORT});
 });
-
