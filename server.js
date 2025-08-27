@@ -4,20 +4,23 @@ const helmet = require("helmet");
 const dotenv = require("dotenv");
 const { Pool } = require("pg");
 
+// Load environment variables
 dotenv.config();
 
 const app = express();
+
+// Security and middleware
 app.use(helmet());
 app.use(express.json());
 
 // CORS setup
-const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : "*";
+const corsOrigin = process.env.CORS_ORIGIN || "*";
 app.use(cors({ origin: corsOrigin }));
 
-// API Key check (optional)
+// API Key check middleware (optional)
 const API_KEY = process.env.API_KEY || "";
 function requireApiKey(req, res, next) {
-  if (!API_KEY) return next();
+  if (!API_KEY) return next(); // If no key set, skip
   const key = req.header("x-api-key");
   if (key && key === API_KEY) return next();
   return res.status(401).json({ error: "Unauthorized" });
@@ -29,7 +32,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Auto-create wallets table if not exists
+// ✅ Create table if not exists
 (async () => {
   try {
     await pool.query(`
@@ -38,13 +41,13 @@ const pool = new Pool({
         address TEXT NOT NULL
       )
     `);
-    console.log("✅ Wallets table ready");
+    console.log("✅ Wallets table is ready");
   } catch (err) {
-    console.error("❌ Table creation failed:", err.message);
+    console.error("❌ Failed to create table:", err.message);
   }
 })();
 
-// Health Check
+// ✅ Health Check
 app.get("/health", async (req, res) => {
   try {
     const result = await pool.query("SELECT 1 AS ok");
@@ -54,7 +57,7 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// Get all wallets
+// ✅ Get all wallets
 app.get("/wallets", requireApiKey, async (req, res) => {
   try {
     const result = await pool.query("SELECT address FROM wallets ORDER BY id DESC");
@@ -65,7 +68,7 @@ app.get("/wallets", requireApiKey, async (req, res) => {
   }
 });
 
-// Save a wallet
+// ✅ Save a wallet
 app.post("/wallets", requireApiKey, async (req, res) => {
   try {
     const { address } = req.body || {};
@@ -79,11 +82,12 @@ app.post("/wallets", requireApiKey, async (req, res) => {
   }
 });
 
-// Root
+// ✅ Root endpoint
 app.get("/", (req, res) => {
   res.json({ status: "wallet-api running (Postgres)" });
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(✅ API listening on port ${PORT});
