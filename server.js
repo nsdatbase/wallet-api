@@ -13,8 +13,10 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 
-// CORS setup
-const corsOrigin = process.env.CORS_ORIGIN || "*";
+// ✅ Updated CORS setup: multiple origins support
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",")
+  : "*";
 app.use(cors({ origin: corsOrigin }));
 
 // API Key check middleware (optional)
@@ -28,7 +30,7 @@ function requireApiKey(req, res, next) {
 
 // PostgreSQL Pool
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Render provides DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
@@ -38,7 +40,8 @@ const pool = new Pool({
     await pool.query(`
       CREATE TABLE IF NOT EXISTS wallets (
         id SERIAL PRIMARY KEY,
-        address TEXT NOT NULL
+        address TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
       )
     `);
     console.log("✅ Wallets table is ready");
@@ -76,6 +79,7 @@ app.post("/wallets", requireApiKey, async (req, res) => {
       return res.status(400).json({ error: "Invalid address" });
     }
     await pool.query("INSERT INTO wallets (address) VALUES ($1)", [address.trim()]);
+    console.log("✅ Saved wallet:", address.trim()); // Debug log
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: "Insert failed", details: err.message });
@@ -92,4 +96,3 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ API listening on port ${PORT}`);
 });
-
